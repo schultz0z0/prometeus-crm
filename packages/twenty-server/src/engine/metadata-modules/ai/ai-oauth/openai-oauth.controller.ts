@@ -31,13 +31,20 @@ export class OpenaiOauthController {
     const deviceAuth =
       await this.openaiDeviceCodeService.initiateDeviceAuth();
 
+    // The Codex CLI endpoint may return verification_url instead of
+    // verification_uri, so handle both. Default to the known Codex device page.
+    const verificationUri =
+      deviceAuth.verification_uri_complete ??
+      deviceAuth.verification_uri ??
+      deviceAuth.verification_url ??
+      'https://auth.openai.com/codex/device';
+
     return {
       userCode: deviceAuth.user_code,
-      verificationUri:
-        deviceAuth.verification_uri_complete ?? deviceAuth.verification_uri,
+      verificationUri,
       deviceCode: deviceAuth.device_code,
       expiresIn: deviceAuth.expires_in,
-      interval: deviceAuth.interval,
+      interval: deviceAuth.interval ?? 5,
     };
   }
 

@@ -7,11 +7,14 @@ import { isDefined } from 'twenty-shared/utils';
 import { TwentyConfigService } from 'src/engine/core-modules/twenty-config/twenty-config.service';
 import { OpenaiOauthTokenEntity } from 'src/engine/metadata-modules/ai/ai-oauth/openai-oauth-token.entity';
 
-// RFC 8628 Device Authorization Grant response shape
+// Device Authorization response shape
+// The Codex CLI endpoint may return different field names than RFC 8628:
+//   verification_url vs verification_uri, etc.
 type DeviceAuthResponse = {
   device_code: string;
   user_code: string;
-  verification_uri: string;
+  verification_uri?: string;
+  verification_url?: string;
   verification_uri_complete?: string;
   expires_in: number;
   interval: number;
@@ -24,12 +27,19 @@ type TokenResponse = {
   expires_in: number;
 };
 
-// OpenAI auth endpoints (same as Codex CLI)
-const OPENAI_DEVICE_CODE_URL = 'https://auth.openai.com/oauth/device/code';
+// OpenAI Codex CLI device-auth endpoints
+// NOTE: The Auth0 endpoints (/oauth/device/code, /oauth/token) are protected by
+// Cloudflare WAF with JavaScript challenges that block server-side requests.
+// The Codex CLI uses these internal device-auth endpoints instead, which are
+// designed for non-browser clients and don't trigger Cloudflare challenges.
+const OPENAI_DEVICE_USERCODE_URL =
+  'https://auth.openai.com/api/accounts/deviceauth/usercode';
+const OPENAI_DEVICE_TOKEN_URL =
+  'https://auth.openai.com/api/accounts/deviceauth/token';
 const OPENAI_TOKEN_URL = 'https://auth.openai.com/oauth/token';
-const DEFAULT_CLIENT_ID = 'DRivsnm2Mu42T3KOpqdtwB3NYviHYzwD';
-const DEFAULT_SCOPE = 'openid profile email offline_access';
-const DEFAULT_AUDIENCE = 'https://api.openai.com/v1';
+const DEFAULT_CLIENT_ID = 'app_EMoamEEZ73f0CkXaXp7hrann';
+const CODEX_USER_AGENT =
+  'codex-cli/1.0 (Twenty CRM; +https://twenty.com)';
 
 @Injectable()
 export class OpenaiDeviceCodeService implements OnModuleInit {
@@ -79,15 +89,18 @@ export class OpenaiDeviceCodeService implements OnModuleInit {
     }
   }
 
-  // Step 1: Request a device code from OpenAI
+  // Step 1: Request a device code from OpenAI (Codex CLI endpoint)
   async initiateDeviceAuth(): Promise<DeviceAuthResponse> {
-    const response = await fetch(OPENAI_DEVICE_CODE_URL, {
+    const clientId = this.getClientId();
+
+    const response = await fetch(OPENAI_DEVICE_USERCODE_URL, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: new URLSearchParams({
-        client_id: this.getClientId(),
-        scope: DEFAULT_SCOPE,
-        audience: DEFAULT_AUDIENCE,
+      headers: {
+        'Content-Type': 'application/json',
+        'User-Agent': CODEX_USER_AGENT,
+      },
+      body: JSON.stringify({
+        client_id: clientId,
       }),
     });
 
@@ -103,31 +116,50 @@ export class OpenaiDeviceCodeService implements OnModuleInit {
     return response.json() as Promise<DeviceAuthResponse>;
   }
 
-  // Step 2: Poll for the token after user authorizes
+  // Step 2: Poll for the token after user authorizes (Codex CLI endpoint)
   async pollForToken(deviceCode: string): Promise<TokenResponse> {
-    const response = await fetch(OPENAI_TOKEN_URL, {
+    const response = await fetch(OPENAI_DEVICE_TOKEN_URL, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: new URLSearchParams({
-        grant_type: 'urn:ietf:params:oauth:grant-type:device_code',
+      headers: {
+        'Content-Type': 'application/json',
+        'User-Agent': CODEX_USER_AGENT,
+      },
+      body: JSON.stringify({
         device_code: deviceCode,
         client_id: this.getClientId(),
       }),
     });
 
     if (!response.ok) {
-      const errorBody = (await response.json()) as { error?: string };
+      let errorBody: { error?: string; status?: string } = {};
 
-      // RFC 8628: authorization_pending and slow_down are expected during polling
+      try {
+        errorBody = (await response.json()) as {
+          error?: string;
+          status?: string;
+        };
+      } catch {
+        const text = await response.text().catch(() => '');
+
+        this.logger.warn(
+          `Device token poll returned non-JSON ${response.status}: ${text.substring(0, 200)}`,
+        );
+        throw new DeviceAuthPendingError('authorization_pending');
+      }
+
+      const errorCode = errorBody.error ?? errorBody.status ?? '';
+
+      // authorization_pending and slow_down are expected during polling
       if (
-        errorBody.error === 'authorization_pending' ||
-        errorBody.error === 'slow_down'
+        errorCode === 'authorization_pending' ||
+        errorCode === 'pending' ||
+        errorCode === 'slow_down'
       ) {
-        throw new DeviceAuthPendingError(errorBody.error);
+        throw new DeviceAuthPendingError(errorCode);
       }
 
       throw new Error(
-        `Token exchange failed: ${errorBody.error || response.status}`,
+        `Token exchange failed: ${errorCode || response.status}`,
       );
     }
 
@@ -138,7 +170,10 @@ export class OpenaiDeviceCodeService implements OnModuleInit {
   async refreshAccessToken(refreshToken: string): Promise<TokenResponse> {
     const response = await fetch(OPENAI_TOKEN_URL, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'User-Agent': CODEX_USER_AGENT,
+      },
       body: new URLSearchParams({
         grant_type: 'refresh_token',
         refresh_token: refreshToken,
