@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 
 import { createAmazonBedrock } from '@ai-sdk/amazon-bedrock';
 import { createAnthropic, type AnthropicProvider } from '@ai-sdk/anthropic';
@@ -17,6 +17,8 @@ import {
 } from 'ai';
 import { type AiSdkPackage } from 'twenty-shared/ai';
 import { isDefined } from 'twenty-shared/utils';
+
+import { OpenaiDeviceCodeService } from 'src/engine/metadata-modules/ai/ai-oauth/openai-device-code.service';
 
 import {
   AI_SDK_ANTHROPIC,
@@ -42,7 +44,12 @@ export type AiSdkProviderInstance = {
 
 @Injectable()
 export class SdkProviderFactoryService {
+  private readonly logger = new Logger(SdkProviderFactoryService.name);
   private readonly providerInstances = new Map<string, AiSdkProviderInstance>();
+
+  constructor(
+    private readonly openaiDeviceCodeService: OpenaiDeviceCodeService,
+  ) {}
 
   createProvider(
     providerName: string,
@@ -113,7 +120,9 @@ export class SdkProviderFactoryService {
   ): AiSdkProviderInstance {
     switch (config.npm) {
       case AI_SDK_OPENAI:
-        return this.buildStandardProvider(config, createOpenAI);
+        return config.authType === 'oauth'
+          ? this.buildOAuthOpenAIProvider(config)
+          : this.buildStandardProvider(config, createOpenAI);
       case AI_SDK_ANTHROPIC:
         return this.buildStandardProvider(config, createAnthropic);
       case AI_SDK_GOOGLE:
@@ -220,6 +229,51 @@ export class SdkProviderFactoryService {
       provider,
       AI_SDK_OPENAI_COMPATIBLE,
       (modelId: string) => provider(modelId),
+    );
+  }
+
+  private buildOAuthOpenAIProvider(
+    config: AiProviderConfig,
+  ): AiSdkProviderInstance {
+    // OAuth providers are never cached because the access token rotates.
+    // The token is fetched lazily on each model call via a custom fetch
+    // wrapper that injects the current Bearer token.
+    const deviceCodeService = this.openaiDeviceCodeService;
+    const logger = this.logger;
+
+    const provider = createOpenAI({
+      apiKey: 'oauth-placeholder',
+      ...(config.baseUrl && { baseURL: config.baseUrl }),
+      fetch: async (url: RequestInfo | URL, init?: RequestInit) => {
+        // Resolve the workspace token at call time
+        // The workspaceId is injected into the config by the registry
+        const workspaceId = (config as { workspaceId?: string }).workspaceId;
+
+        if (isDefined(workspaceId)) {
+          const accessToken =
+            await deviceCodeService.getAccessToken(workspaceId);
+
+          if (isDefined(accessToken)) {
+            const headers = new Headers(init?.headers);
+
+            headers.set('Authorization', `Bearer ${accessToken}`);
+
+            return globalThis.fetch(url, { ...init, headers });
+          }
+
+          logger.warn(
+            `No OAuth access token found for workspace ${workspaceId}, falling back to default`,
+          );
+        }
+
+        return globalThis.fetch(url, init);
+      },
+    });
+
+    return this.toProviderInstance(
+      provider,
+      config.npm,
+      (modelId: string) => (provider as CallableFunction)(modelId),
     );
   }
 

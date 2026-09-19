@@ -1888,6 +1888,24 @@ export class ConfigVariables {
 
   @ConfigVariablesMetadata({
     group: ConfigVariablesGroup.LLM,
+    description:
+      'Enable OpenAI OAuth Device Code Flow (allows users to sign in with their ChatGPT account)',
+    type: ConfigVariableType.BOOLEAN,
+  })
+  @IsOptional()
+  OPENAI_OAUTH_ENABLED?: boolean;
+
+  @ConfigVariablesMetadata({
+    group: ConfigVariablesGroup.LLM,
+    description:
+      'OAuth Client ID for the OpenAI Device Code Flow (defaults to the Codex CLI client)',
+    type: ConfigVariableType.STRING,
+  })
+  @IsOptional()
+  OPENAI_OAUTH_CLIENT_ID?: string;
+
+  @ConfigVariablesMetadata({
+    group: ConfigVariablesGroup.LLM,
     isSensitive: true,
     description: 'API key for Anthropic models (Claude)',
     type: ConfigVariableType.STRING,

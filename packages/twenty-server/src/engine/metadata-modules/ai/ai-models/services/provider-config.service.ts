@@ -53,12 +53,19 @@ export class ProviderConfigService {
   }
 
   private resolveProviderTemplates(config: AiProviderConfig): AiProviderConfig {
+    const apiKey = this.resolveTemplate(config.apiKey);
+    const isOpenAiOAuthEnabled =
+      this.twentyConfigService.get('OPENAI_OAUTH_ENABLED') ?? true;
+    const isOAuth =
+      config.npm === '@ai-sdk/openai' && !apiKey && isOpenAiOAuthEnabled;
+
     return {
       ...config,
       baseUrl: this.resolveTemplate(config.baseUrl),
-      apiKey: this.resolveTemplate(config.apiKey),
+      apiKey,
       accessKeyId: this.resolveTemplate(config.accessKeyId),
       secretAccessKey: this.resolveTemplate(config.secretAccessKey),
+      ...(isOAuth && { authType: 'oauth' }),
     };
   }
 

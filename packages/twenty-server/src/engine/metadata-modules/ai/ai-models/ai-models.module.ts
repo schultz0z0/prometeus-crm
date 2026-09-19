@@ -9,10 +9,11 @@ import { ModelsDevCatalogService } from 'src/engine/metadata-modules/ai/ai-model
 import { NativeToolBinderService } from 'src/engine/metadata-modules/ai/ai-models/services/native-tool-binder.service';
 import { ProviderConfigService } from 'src/engine/metadata-modules/ai/ai-models/services/provider-config.service';
 import { SdkProviderFactoryService } from 'src/engine/metadata-modules/ai/ai-models/services/sdk-provider-factory.service';
+import { OpenaiOauthModule } from 'src/engine/metadata-modules/ai/ai-oauth/openai-oauth.module';
 
 @Global()
 @Module({
-  imports: [EnterpriseModule],
+  imports: [EnterpriseModule, OpenaiOauthModule],
   providers: [
     DefaultAiCatalogService,
     ProviderConfigService,
@@ -31,6 +32,7 @@ import { SdkProviderFactoryService } from 'src/engine/metadata-modules/ai/ai-mod
     SdkProviderFactoryService,
     ModelsDevCatalogService,
     NativeToolBinderService,
+    OpenaiOauthModule,
   ],
 })
 export class AiModelsModule {}

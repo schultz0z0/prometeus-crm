@@ -1,5 +1,6 @@
 import { FormAdvancedTextFieldInput } from '@/advanced-text-editor/components/FormAdvancedTextFieldInput';
 import { AI_INSTRUCTIONS_EDITOR_PROFILE } from '@/ai/constants/AiInstructionsEditorProfile';
+import { SettingsAiOpenAiOAuth } from '@/pages/settings/ai/components/SettingsAiOpenAiOAuth';
 import { currentWorkspaceState } from '@/auth/states/currentWorkspaceState';
 import { getToastOptionsFromError } from '@/error-handler/utils/getToastOptionsFromError';
 import { SettingsCard } from '@/settings/components/SettingsCard';
@@ -122,6 +123,14 @@ export const SettingsAiOverviewTab = () => {
             title={t`Set up MCP`}
           />
         </UndecoratedLink>
+      </Section.Root>
+
+      <Section.Root>
+        <Section.Header
+          title={t`ChatGPT / Codex OAuth`}
+          description={t`Connect your ChatGPT account to use OpenAI models with your subscription`}
+        />
+        <SettingsAiOpenAiOAuth />
       </Section.Root>
 
       <Section.Root>
