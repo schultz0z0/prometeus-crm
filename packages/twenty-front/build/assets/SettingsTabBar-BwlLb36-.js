@@ -1,0 +1,1 @@
+import{t as i}from"./jsx-runtime-BmDUFisN.js";import{$r as s}from"./index-Djy9izhi.js";var m=i(),n=({"aria-label":r,behaveAsLinks:a,tabs:t,componentInstanceId:e})=>(0,m.jsx)(s,{"aria-label":r,behaveAsLinks:a,tabs:t,componentInstanceId:e,centerTabs:!0});export{n as t};

@@ -1,0 +1,1 @@
+import{t as e}from"./jsx-runtime-BmDUFisN.js";import{o as i}from"./theme-constants-C9fJFNSg-DoDi4Hx_.js";var r=e(),t={container:"_container_1i6sz_1",dot:"_dot_1i6sz_15",loaderDot:"_loaderDot_1i6sz_1"},_=({color:o})=>(0,r.jsx)("div",{className:t.container,style:o?{"--loader-color":i.tag.text[o]}:void 0,children:(0,r.jsx)("div",{className:t.dot})});export{_ as t};

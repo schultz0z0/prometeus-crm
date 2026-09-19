@@ -19,7 +19,7 @@ storybook-static
 build-storybook.log
 
 # production
-/build
+# /build
 dist
 dist-ssr
 

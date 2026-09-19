@@ -1,0 +1,1 @@
+import{r as t}from"./types-Blk92mP1-Bs1i4Xbw.js";import{t as o}from"./getBasePathToShowPage-BFHeItlk.js";var g=(a,e)=>{const s=o({objectNameSingular:a}),r=a===t.WorkspaceMember;return a===t.NoteTarget?o({objectNameSingular:t.Note})+e.note?.id:a===t.TaskTarget?o({objectNameSingular:t.Task})+e.task?.id:r||!e.id?"":`${s}${e.id}`};export{g as t};

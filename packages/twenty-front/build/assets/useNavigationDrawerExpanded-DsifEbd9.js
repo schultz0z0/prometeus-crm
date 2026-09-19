@@ -1,0 +1,1 @@
+import{t as a}from"./createAtomState-CIJqqZRg.js";import{t as e}from"./useAtomStateValue-Dh9Tkqi-.js";var t=window.innerWidth<=768,r=a({key:"isNavigationDrawerExpanded",defaultValue:!t,useLocalStorage:!0}),n=()=>e(r);export{r as n,n as t};

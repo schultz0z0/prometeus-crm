@@ -1,0 +1,1 @@
+import{t}from"./createAtomSelector-Dzdd3yEy.js";import{t as o}from"./createAtomFamilySelector-CJs7Rg35.js";import{t as a}from"./viewsSelector-C6L7NZtV.js";var m=t({key:"viewsByIdMapSelector",get:({get:r})=>new Map(r(a).map(e=>[e.id,e]))}),p=o({key:"viewFromViewIdFamilySelector",get:({viewId:r})=>({get:e})=>e(m).get(r),areEqual:(r,e)=>r===e});export{p as t};

@@ -1,0 +1,1 @@
+import{da as a}from"./graphql-DNS_baJt.js";import{t as u}from"./useQuery-klx7Id1G.js";var e=()=>{const{data:o,loading:t,error:s}=u(a);return{usageQuotasWithConsumption:o?.usageQuotasWithConsumption??[],loading:t,error:s}};export{e as t};

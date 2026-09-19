@@ -1,0 +1,1 @@
+import{o as m}from"./chunk-ChpBd9eV.js";import{t as s}from"./react-M6yZRsSc.js";import{m as i}from"./dist-BZ9wCSoz.js";import{Mn as p}from"./utils-Cw5oo35x-DwNpgVj_.js";var u=m(s(),1),_=()=>{const r=i();return(0,u.useCallback)((a,t,e,o)=>r(p(a,t,e),o),[r])};export{_ as t};

@@ -1,0 +1,1 @@
+import{t as e}from"./isDefined-Dtu5EYqP-_d6Dqdoe.js";import{b as t}from"./side-channel-weakmap-b8VkYjjp.js";var o=r=>{if(!e(r))throw new Error("objectMetadataNamePlural is required");return`Aggregate${t(r)}`};export{o as t};

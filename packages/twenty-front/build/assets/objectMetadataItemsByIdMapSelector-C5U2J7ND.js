@@ -1,0 +1,1 @@
+import{t as o}from"./createAtomSelector-Dzdd3yEy.js";import{t as r}from"./objectMetadataItemsWithFieldsSelector-hb4JwHm5.js";var s=o({key:"objectMetadataItemsByIdMapSelector",get:({get:e})=>{const a=e(r);return new Map(a.map(t=>[t.id,t]))}});export{s as t};

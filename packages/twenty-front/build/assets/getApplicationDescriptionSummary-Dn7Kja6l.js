@@ -1,0 +1,1 @@
+var s=r=>r.replace(/```[\s\S]*?```/g," ").replace(/!\[([^\]]*)\]\(([^)]+)\)/g,"$1").replace(/\[([^\]]+)\]\(([^)]+)\)/g,"$1").replace(/^>\s?/gm,"").replace(/^\s{0,3}(?:[-*+]\s+|\d+\.\s+)/gm,"").replace(/[*_~`#]/g,"").replace(/\s+/g," ").trim(),t=r=>{if(!r)return"";for(const a of r.split(/\n\s*\n/)){const e=s(a);if(e.length>0)return e}return""};export{t};

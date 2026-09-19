@@ -1,0 +1,1 @@
+import{t as o}from"./createReactComponent-CmedsHsX.js";var a=[["path",{d:"M5 4h4l3 3h7a2 2 0 0 1 2 2v8a2 2 0 0 1 -2 2h-14a2 2 0 0 1 -2 -2v-11a2 2 0 0 1 2 -2",key:"svg-0"}]],r=o("outline","folder","Folder",a);export{r as t};

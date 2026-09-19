@@ -1,0 +1,1 @@
+import{t as a}from"./createAtomSelector-Dzdd3yEy.js";import{t as r}from"./objectMetadataItemsWithFieldsSelector-hb4JwHm5.js";var d=a({key:"flattenedFieldMetadataItemsSelector",get:({get:t})=>t(r).flatMap(e=>e.fields)});export{d as t};

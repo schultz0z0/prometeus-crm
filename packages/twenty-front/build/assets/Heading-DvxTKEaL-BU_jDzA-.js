@@ -1,0 +1,1 @@
+import{t as m}from"./clsx-DWz4Q8_5.js";import{t}from"./useRender-Bc-ylWZE.js";var i={heading:"_heading_1yz66_1"},c=({level:e=2,size:a="md",color:r="primary",render:s,ref:d,className:o,...l})=>t({defaultTagName:`h${e}`,render:s,ref:d,props:{...l,"data-size":a,"data-color":r,className:m(i.heading,o)}});export{c as t};

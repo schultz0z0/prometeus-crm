@@ -1,0 +1,1 @@
+import{O as r}from"./types-Blk92mP1-Bs1i4Xbw.js";import{t}from"./createAtomState-CIJqqZRg.js";import{t as a}from"./DefaultOpenRecordInPreference-BBEq4HWF.js";var c=t({key:"currentWorkspaceMembersState",defaultValue:[]}),o=e=>e===r.SIDE_PANEL||e===r.RECORD_PAGE,p=e=>o(e)?e:a;export{p as n,c as r,o as t};

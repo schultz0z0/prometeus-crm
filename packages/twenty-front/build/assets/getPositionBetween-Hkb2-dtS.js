@@ -1,0 +1,1 @@
+import{t as r}from"./isDefined-Dtu5EYqP-_d6Dqdoe.js";import{t}from"./createAtomState-CIJqqZRg.js";var m=t({key:"openNavigationMenuItemFolderIdsState",defaultValue:[]}),d=(a,e)=>!r(a)&&r(e)?e-1:r(a)&&!r(e)?a+1:r(a)&&r(e)?a===e?a-1:(a+e)/2:0;export{m as n,d as t};

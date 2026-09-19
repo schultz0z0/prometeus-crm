@@ -1,0 +1,1 @@
+import{z as E}from"./types-Blk92mP1-Bs1i4Xbw.js";var A=T=>[E.UUID,E.TEXT,E.DATE_TIME,E.DATE,E.NUMBER,E.NUMERIC,E.BOOLEAN,E.RATING,E.SELECT,E.MULTI_SELECT,E.POSITION,E.RAW_JSON,E.ARRAY].includes(T);export{A as t};
