@@ -63,7 +63,7 @@ export class OpenaiDeviceCodeService implements OnModuleInit {
       `);
     } catch (error: any) {
       this.logger.warn(
-        \`Could not ensure table openai_oauth_token: \${error?.message}\`,
+        'Could not ensure table openai_oauth_token: ' + (error?.message ?? ''),
       );
     }
   }
