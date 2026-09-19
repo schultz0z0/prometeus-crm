@@ -31,39 +31,43 @@ export class OpenaiOauthController {
     const deviceAuth =
       await this.openaiDeviceCodeService.initiateDeviceAuth();
 
-    // The Codex CLI endpoint may return verification_url instead of
-    // verification_uri, so handle both. Default to the known Codex device page.
-    const verificationUri =
-      deviceAuth.verification_uri_complete ??
-      deviceAuth.verification_uri ??
-      deviceAuth.verification_url ??
-      'https://auth.openai.com/codex/device';
-
     return {
       userCode: deviceAuth.user_code,
-      verificationUri,
-      deviceCode: deviceAuth.device_code,
-      expiresIn: deviceAuth.expires_in,
-      interval: deviceAuth.interval ?? 5,
+      verificationUri: deviceAuth.verification_uri,
+      deviceCode: deviceAuth.device_auth_id,
+      deviceAuthId: deviceAuth.device_auth_id,
+      expiresIn: 900,
+      interval: deviceAuth.interval,
     };
   }
 
   @Post('exchange')
   async exchangeDeviceCode(
-    @Body() body: { deviceCode: string },
+    @Body()
+    body: {
+      deviceCode?: string;
+      deviceAuthId?: string;
+      userCode?: string;
+    },
     @AuthWorkspace() workspace: WorkspaceEntity,
   ) {
+    const code = body.deviceAuthId ?? body.deviceCode;
+
+    if (!code) {
+      return { connected: false, pending: false, error: 'Missing device code' };
+    }
+
     try {
-      const tokenResponse = await this.openaiDeviceCodeService.pollForToken(
-        body.deviceCode,
-      );
+      const { tokens, email } =
+        await this.openaiDeviceCodeService.pollForToken(code, body.userCode);
 
       await this.openaiDeviceCodeService.saveTokens(
         workspace.id,
-        tokenResponse,
+        tokens,
+        email,
       );
 
-      return { connected: true };
+      return { connected: true, email };
     } catch (error) {
       if (error instanceof DeviceAuthPendingError) {
         return { connected: false, pending: true, reason: error.reason };

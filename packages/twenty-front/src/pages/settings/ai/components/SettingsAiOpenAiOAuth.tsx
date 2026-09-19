@@ -185,7 +185,7 @@ export const SettingsAiOpenAiOAuth = () => {
       const data = (await response.json()) as DeviceCodeResponse;
 
       setDeviceCode(data);
-      startPolling(data.deviceCode, data.interval);
+      startPolling(data.deviceCode, data.userCode, data.interval);
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
 
@@ -198,7 +198,11 @@ export const SettingsAiOpenAiOAuth = () => {
     }
   };
 
-  const startPolling = (code: string, intervalSeconds: number) => {
+  const startPolling = (
+    code: string,
+    userCode: string,
+    intervalSeconds: number,
+  ) => {
     setIsPolling(true);
 
     pollingRef.current = setInterval(
@@ -210,7 +214,7 @@ export const SettingsAiOpenAiOAuth = () => {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               credentials: 'include',
-              body: JSON.stringify({ deviceCode: code }),
+              body: JSON.stringify({ deviceCode: code, userCode }),
             },
           );
 

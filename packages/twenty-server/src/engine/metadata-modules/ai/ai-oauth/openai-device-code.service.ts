@@ -8,22 +8,19 @@ import { TwentyConfigService } from 'src/engine/core-modules/twenty-config/twent
 import { OpenaiOauthTokenEntity } from 'src/engine/metadata-modules/ai/ai-oauth/openai-oauth-token.entity';
 
 // Device Authorization response shape
-// The Codex CLI endpoint may return different field names than RFC 8628:
-//   verification_url vs verification_uri, etc.
-type DeviceAuthResponse = {
-  device_code: string;
+export type DeviceAuthResponse = {
+  device_auth_id: string;
   user_code: string;
-  verification_uri?: string;
-  verification_url?: string;
-  verification_uri_complete?: string;
-  expires_in: number;
+  verification_uri: string;
   interval: number;
+  expires_at?: string;
 };
 
-type TokenResponse = {
+export type TokenResponse = {
   access_token: string;
   refresh_token?: string;
-  token_type: string;
+  id_token?: string;
+  token_type?: string;
   expires_in: number;
 };
 
@@ -40,10 +37,18 @@ const OPENAI_TOKEN_URL = 'https://auth.openai.com/oauth/token';
 const DEFAULT_CLIENT_ID = 'app_EMoamEEZ73f0CkXaXp7hrann';
 const CODEX_USER_AGENT =
   'codex-cli/1.0 (Twenty CRM; +https://twenty.com)';
+const CODEX_REDIRECT_URI = 'https://auth.openai.com/deviceauth/callback';
+const CODEX_DEVICE_VERIFY_URL = 'https://auth.openai.com/codex/device';
 
 @Injectable()
 export class OpenaiDeviceCodeService implements OnModuleInit {
   private readonly logger = new Logger(OpenaiDeviceCodeService.name);
+
+  // In-memory cache mapping device_auth_id to user_code and timestamp
+  private readonly pendingAuths = new Map<
+    string,
+    { userCode: string; createdAt: number }
+  >();
 
   constructor(
     private readonly twentyConfigService: TwentyConfigService,
@@ -113,11 +118,51 @@ export class OpenaiDeviceCodeService implements OnModuleInit {
       throw new Error(`Failed to initiate device auth: ${response.status}`);
     }
 
-    return response.json() as Promise<DeviceAuthResponse>;
+    const data = (await response.json()) as {
+      device_auth_id: string;
+      user_code: string;
+      interval?: string | number;
+      expires_at?: string;
+    };
+
+    // Store user_code mapped to device_auth_id for polling
+    this.pendingAuths.set(data.device_auth_id, {
+      userCode: data.user_code,
+      createdAt: Date.now(),
+    });
+
+    // Prune entries older than 20 minutes
+    const now = Date.now();
+    for (const [key, val] of this.pendingAuths.entries()) {
+      if (now - val.createdAt > 20 * 60 * 1000) {
+        this.pendingAuths.delete(key);
+      }
+    }
+
+    return {
+      device_auth_id: data.device_auth_id,
+      user_code: data.user_code,
+      verification_uri: CODEX_DEVICE_VERIFY_URL,
+      interval: data.interval ? Number(data.interval) : 5,
+      expires_at: data.expires_at,
+    };
   }
 
   // Step 2: Poll for the token after user authorizes (Codex CLI endpoint)
-  async pollForToken(deviceCode: string): Promise<TokenResponse> {
+  async pollForToken(
+    deviceAuthId: string,
+    userCodeHint?: string,
+  ): Promise<{ tokens: TokenResponse; email?: string }> {
+    const pending = this.pendingAuths.get(deviceAuthId);
+    const userCode = userCodeHint || pending?.userCode;
+
+    if (!userCode) {
+      this.logger.warn(
+        `No user_code found for device_auth_id ${deviceAuthId}`,
+      );
+      throw new Error('Missing user_code for device token poll');
+    }
+
     const response = await fetch(OPENAI_DEVICE_TOKEN_URL, {
       method: 'POST',
       headers: {
@@ -125,45 +170,109 @@ export class OpenaiDeviceCodeService implements OnModuleInit {
         'User-Agent': CODEX_USER_AGENT,
       },
       body: JSON.stringify({
-        device_code: deviceCode,
-        client_id: this.getClientId(),
+        device_auth_id: deviceAuthId,
+        user_code: userCode,
       }),
     });
 
     if (!response.ok) {
-      let errorBody: { error?: string; status?: string } = {};
-
-      try {
-        errorBody = (await response.json()) as {
-          error?: string;
-          status?: string;
-        };
-      } catch {
-        const text = await response.text().catch(() => '');
-
-        this.logger.warn(
-          `Device token poll returned non-JSON ${response.status}: ${text.substring(0, 200)}`,
-        );
+      // 403 / 404 indicates user has not yet authorized the code in browser
+      if (response.status === 403 || response.status === 404) {
         throw new DeviceAuthPendingError('authorization_pending');
       }
 
-      const errorCode = errorBody.error ?? errorBody.status ?? '';
-
-      // authorization_pending and slow_down are expected during polling
-      if (
-        errorCode === 'authorization_pending' ||
-        errorCode === 'pending' ||
-        errorCode === 'slow_down'
-      ) {
-        throw new DeviceAuthPendingError(errorCode);
+      let errorText = '';
+      try {
+        const errorJson = await response.json();
+        errorText = JSON.stringify(errorJson);
+      } catch {
+        errorText = await response.text().catch(() => '');
       }
 
-      throw new Error(
-        `Token exchange failed: ${errorCode || response.status}`,
+      this.logger.warn(
+        `Device token poll returned HTTP ${response.status}: ${errorText.substring(0, 200)}`,
       );
+      throw new Error(`Token exchange failed: ${response.status}`);
     }
 
-    return response.json() as Promise<TokenResponse>;
+    // Status 200 OK: the user approved in the browser!
+    // Response contains authorization_code and code_verifier
+    const codeData = (await response.json()) as {
+      authorization_code?: string;
+      code_verifier?: string;
+    };
+
+    if (!codeData.authorization_code || !codeData.code_verifier) {
+      this.logger.error(
+        `Device auth response missing authorization_code or code_verifier: ${JSON.stringify(codeData)}`,
+      );
+      throw new Error('Missing authorization_code or code_verifier');
+    }
+
+    // Step 2b: Exchange authorization_code + code_verifier for final tokens
+    const tokens = await this.exchangeAuthorizationCode(
+      codeData.authorization_code,
+      codeData.code_verifier,
+    );
+
+    // Extract email from id_token JWT if present
+    let email: string | undefined;
+    if (tokens.id_token) {
+      try {
+        const payloadBase64 = tokens.id_token.split('.')[1];
+        if (payloadBase64) {
+          const decoded = JSON.parse(
+            Buffer.from(payloadBase64, 'base64').toString('utf-8'),
+          );
+          email = decoded.email;
+        }
+      } catch (err) {
+        this.logger.warn(`Failed to parse id_token for email: ${err}`);
+      }
+    }
+
+    // Finished successfully, remove from pending map
+    this.pendingAuths.delete(deviceAuthId);
+
+    return { tokens, email };
+  }
+
+  private async exchangeAuthorizationCode(
+    authorizationCode: string,
+    codeVerifier: string,
+  ): Promise<TokenResponse> {
+    const clientId = this.getClientId();
+
+    const response = await fetch(OPENAI_TOKEN_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'User-Agent': CODEX_USER_AGENT,
+      },
+      body: new URLSearchParams({
+        grant_type: 'authorization_code',
+        code: authorizationCode,
+        redirect_uri: CODEX_REDIRECT_URI,
+        client_id: clientId,
+        code_verifier: codeVerifier,
+      }),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      this.logger.error(
+        `Token exchange failed: ${response.status} ${errorText}`,
+      );
+      throw new Error(`Token exchange failed: ${response.status}`);
+    }
+
+    const data = (await response.json()) as TokenResponse;
+
+    if (!data.access_token) {
+      throw new Error('Token exchange response did not contain access_token');
+    }
+
+    return data;
   }
 
   // Step 3: Refresh an expired access token
@@ -201,7 +310,8 @@ export class OpenaiDeviceCodeService implements OnModuleInit {
       where: { workspaceId },
     });
 
-    const expiresAt = new Date(Date.now() + tokenResponse.expires_in * 1000);
+    const expiresInSeconds = Number(tokenResponse.expires_in) || 86400;
+    const expiresAt = new Date(Date.now() + expiresInSeconds * 1000);
 
     if (isDefined(existing)) {
       existing.accessToken = tokenResponse.access_token;
