@@ -2,7 +2,11 @@ name: twenty-crm
 
 services:
   server:
-    image: twentycrm/twenty:${TAG:-latest}
+    image: prometeus-crm:${TAG:-latest}
+    build:
+      context: ..
+      dockerfile: packages/twenty-docker/twenty/Dockerfile
+      target: twenty
     restart: always
     volumes:
       - server-local-data:/app/packages/twenty-server/.local-storage
@@ -17,6 +21,7 @@ services:
       DISABLE_CRON_JOBS_REGISTRATION: "false"
       STORAGE_TYPE: ${STORAGE_TYPE:-local}
       ENCRYPTION_KEY: ${ENCRYPTION_KEY}
+      OPENAI_OAUTH_ENABLED: ${OPENAI_OAUTH_ENABLED:-true}
     depends_on:
       db:
         condition: service_healthy
@@ -36,7 +41,11 @@ services:
       - "traefik.http.services.twenty.loadbalancer.server.port=3000"
 
   worker:
-    image: twentycrm/twenty:${TAG:-latest}
+    image: prometeus-crm:${TAG:-latest}
+    build:
+      context: ..
+      dockerfile: packages/twenty-docker/twenty/Dockerfile
+      target: twenty
     restart: always
     command: ["yarn", "worker:prod"]
     volumes:
@@ -49,6 +58,7 @@ services:
       DISABLE_CRON_JOBS_REGISTRATION: "true"
       STORAGE_TYPE: ${STORAGE_TYPE:-local}
       ENCRYPTION_KEY: ${ENCRYPTION_KEY}
+      OPENAI_OAUTH_ENABLED: ${OPENAI_OAUTH_ENABLED:-true}
     depends_on:
       db:
         condition: service_healthy
