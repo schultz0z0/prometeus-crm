@@ -1,6 +1,6 @@
 import { FormAdvancedTextFieldInput } from '@/advanced-text-editor/components/FormAdvancedTextFieldInput';
 import { AI_INSTRUCTIONS_EDITOR_PROFILE } from '@/ai/constants/AiInstructionsEditorProfile';
-import { SettingsAiOpenAiOAuth } from '@/pages/settings/ai/components/SettingsAiOpenAiOAuth';
+import { SettingsAiOpenAiOAuth } from './SettingsAiOpenAiOAuth';
 import { currentWorkspaceState } from '@/auth/states/currentWorkspaceState';
 import { getToastOptionsFromError } from '@/error-handler/utils/getToastOptionsFromError';
 import { SettingsCard } from '@/settings/components/SettingsCard';

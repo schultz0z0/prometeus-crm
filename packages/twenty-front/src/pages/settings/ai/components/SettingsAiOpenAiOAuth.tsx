@@ -1,116 +1,99 @@
+import { styled } from '@linaria/react';
+import { t } from '@lingui/core/macro';
 import { useCallback, useEffect, useRef, useState } from 'react';
-
-import styled from '@emotion/styled';
+import { Button } from 'twenty-ui/primitives/input';
+import { themeCssVariables } from 'twenty-ui/theme-constants';
 
 import { REACT_APP_SERVER_BASE_URL } from '~/config';
 
 const StyledContainer = styled.div`
+  background: ${themeCssVariables.background.secondary};
+  border: 1px solid ${themeCssVariables.border.color.medium};
+  border-radius: ${themeCssVariables.border.radius.md};
   display: flex;
   flex-direction: column;
-  gap: 16px;
-  padding: 16px;
-  border: 1px solid ${({ theme }) => theme.border.color.medium};
-  border-radius: ${({ theme }) => theme.border.radius.md};
-  background: ${({ theme }) => theme.background.secondary};
+  gap: ${themeCssVariables.spacing[4]};
+  padding: ${themeCssVariables.spacing[4]};
 `;
 
 const StyledHeader = styled.div`
-  display: flex;
   align-items: center;
+  display: flex;
   justify-content: space-between;
 `;
 
 const StyledTitle = styled.h3`
+  color: ${themeCssVariables.font.color.primary};
+  font-size: ${themeCssVariables.font.size.md};
+  font-weight: ${themeCssVariables.font.weight.semiBold};
   margin: 0;
-  font-size: ${({ theme }) => theme.font.size.md};
-  font-weight: ${({ theme }) => theme.font.weight.semiBold};
-  color: ${({ theme }) => theme.font.color.primary};
 `;
 
-const StyledStatusBadge = styled.span<{ connected: boolean }>`
-  display: inline-flex;
+const StyledStatusBadge = styled.span`
   align-items: center;
+  border-radius: 12px;
+  display: inline-flex;
+  font-size: ${themeCssVariables.font.size.xs};
+  font-weight: ${themeCssVariables.font.weight.medium};
   gap: 6px;
   padding: 4px 10px;
-  border-radius: 12px;
-  font-size: ${({ theme }) => theme.font.size.xs};
-  font-weight: ${({ theme }) => theme.font.weight.medium};
-  background: ${({ connected, theme }) =>
-    connected
-      ? theme.color.green10 ?? 'rgba(0, 200, 100, 0.1)'
-      : theme.background.tertiary};
-  color: ${({ connected, theme }) =>
-    connected
-      ? theme.color.green ?? '#00c864'
-      : theme.font.color.tertiary};
+
+  &.connected {
+    background: rgba(0, 200, 100, 0.1);
+    color: #00c864;
+  }
+
+  &.disconnected {
+    background: ${themeCssVariables.background.tertiary};
+    color: ${themeCssVariables.font.color.tertiary};
+  }
 `;
 
 const StyledDescription = styled.p`
-  margin: 0;
-  font-size: ${({ theme }) => theme.font.size.sm};
-  color: ${({ theme }) => theme.font.color.secondary};
+  color: ${themeCssVariables.font.color.secondary};
+  font-size: ${themeCssVariables.font.size.sm};
   line-height: 1.5;
-`;
-
-const StyledButton = styled.button<{ variant?: 'primary' | 'danger' }>`
-  padding: 8px 16px;
-  border: none;
-  border-radius: ${({ theme }) => theme.border.radius.sm};
-  font-size: ${({ theme }) => theme.font.size.sm};
-  font-weight: ${({ theme }) => theme.font.weight.medium};
-  cursor: pointer;
-  transition: opacity 0.2s;
-  align-self: flex-start;
-
-  background: ${({ variant, theme }) =>
-    variant === 'danger'
-      ? theme.color.red ?? '#ff4444'
-      : theme.color.blue ?? '#1e90ff'};
-  color: white;
-
-  &:hover {
-    opacity: 0.85;
-  }
-
-  &:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-  }
+  margin: 0;
 `;
 
 const StyledCodeBox = styled.div`
+  align-items: center;
+  background: ${themeCssVariables.background.primary};
+  border: 1px dashed ${themeCssVariables.border.color.medium};
+  border-radius: ${themeCssVariables.border.radius.md};
   display: flex;
   flex-direction: column;
-  align-items: center;
-  gap: 12px;
-  padding: 20px;
-  border-radius: ${({ theme }) => theme.border.radius.md};
-  background: ${({ theme }) => theme.background.primary};
-  border: 1px dashed ${({ theme }) => theme.border.color.medium};
+  gap: ${themeCssVariables.spacing[3]};
+  padding: ${themeCssVariables.spacing[5]};
 `;
 
 const StyledUserCode = styled.code`
+  color: ${themeCssVariables.font.color.primary};
+  font-family: monospace;
   font-size: 28px;
   font-weight: bold;
   letter-spacing: 4px;
-  color: ${({ theme }) => theme.font.color.primary};
-  font-family: monospace;
 `;
 
 const StyledLink = styled.a`
-  color: ${({ theme }) => theme.color.blue ?? '#1e90ff'};
+  color: #1e90ff;
+  font-size: ${themeCssVariables.font.size.sm};
   text-decoration: underline;
-  font-size: ${({ theme }) => theme.font.size.sm};
 `;
 
 const StyledSpinner = styled.span`
-  font-size: ${({ theme }) => theme.font.size.sm};
-  color: ${({ theme }) => theme.font.color.tertiary};
+  color: ${themeCssVariables.font.color.tertiary};
+  font-size: ${themeCssVariables.font.size.sm};
 `;
 
 const StyledEmail = styled.span`
-  font-size: ${({ theme }) => theme.font.size.sm};
-  color: ${({ theme }) => theme.font.color.secondary};
+  color: ${themeCssVariables.font.color.secondary};
+  font-size: ${themeCssVariables.font.size.sm};
+`;
+
+const StyledActions = styled.div`
+  display: flex;
+  gap: ${themeCssVariables.spacing[2]};
 `;
 
 type ConnectionStatus = {
@@ -253,38 +236,48 @@ export const SettingsAiOpenAiOAuth = () => {
     <StyledContainer>
       <StyledHeader>
         <StyledTitle>OpenAI / ChatGPT OAuth</StyledTitle>
-        <StyledStatusBadge connected={status.connected}>
-          {status.connected ? '● Conectado' : '○ Desconectado'}
+        <StyledStatusBadge
+          className={status.connected ? 'connected' : 'disconnected'}
+        >
+          {status.connected ? t`Connected` : t`Disconnected`}
         </StyledStatusBadge>
       </StyledHeader>
 
       <StyledDescription>
-        Conecte sua conta do ChatGPT para usar os modelos da OpenAI consumindo o
-        limite da sua assinatura (Plus/Pro/Team), sem precisar de uma API key
-        paga por token.
+        {t`Connect your ChatGPT account to use OpenAI models with your subscription, without requiring an API key.`}
       </StyledDescription>
 
       {status.connected && (
-        <>
+        <StyledActions>
           {status.email && (
-            <StyledEmail>Conta: {status.email}</StyledEmail>
+            <StyledEmail>{t`Account`}: {status.email}</StyledEmail>
           )}
-          <StyledButton variant="danger" onClick={handleDisconnect}>
-            Desconectar
-          </StyledButton>
-        </>
+          <Button
+            size="sm"
+            variant="outline"
+            color="danger"
+            onClick={handleDisconnect}
+            title={t`Disconnect`}
+          />
+        </StyledActions>
       )}
 
       {!status.connected && !deviceCode && (
-        <StyledButton onClick={handleConnect} disabled={isLoading}>
-          {isLoading ? 'Iniciando...' : 'Conectar com ChatGPT'}
-        </StyledButton>
+        <StyledActions>
+          <Button
+            size="sm"
+            variant="primary"
+            onClick={handleConnect}
+            disabled={isLoading}
+            title={isLoading ? t`Starting...` : t`Connect ChatGPT`}
+          />
+        </StyledActions>
       )}
 
       {deviceCode && isPolling && (
         <StyledCodeBox>
           <StyledDescription>
-            Acesse o link abaixo e cole o código de verificação:
+            {t`Open the link below and enter the verification code:`}
           </StyledDescription>
           <StyledUserCode>{deviceCode.userCode}</StyledUserCode>
           <StyledLink
@@ -294,7 +287,7 @@ export const SettingsAiOpenAiOAuth = () => {
           >
             {deviceCode.verificationUri}
           </StyledLink>
-          <StyledSpinner>Aguardando autorização...</StyledSpinner>
+          <StyledSpinner>{t`Waiting for authorization...`}</StyledSpinner>
         </StyledCodeBox>
       )}
     </StyledContainer>
