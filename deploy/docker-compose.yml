@@ -37,6 +37,7 @@ services:
       # Regra de roteamento para o dominio principal e www
       - "traefik.http.routers.twenty.rule=Host(`${DOMAIN}`) || Host(`www.${DOMAIN}`)"
       - "traefik.http.routers.twenty.entrypoints=websecure"
+      - "traefik.http.routers.twenty.tls=true"
       - "traefik.http.routers.twenty.tls.certresolver=letsencrypt"
       - "traefik.http.services.twenty.loadbalancer.server.port=3000"
 
