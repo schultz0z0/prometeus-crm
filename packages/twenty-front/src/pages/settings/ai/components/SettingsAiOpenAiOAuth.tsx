@@ -2,6 +2,7 @@ import { styled } from '@linaria/react';
 import { t } from '@lingui/core/macro';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Button } from 'twenty-ui/primitives/input';
+import { useToast } from 'twenty-ui/primitives/feedback';
 import { themeCssVariables } from 'twenty-ui/theme-constants';
 
 import { REACT_APP_SERVER_BASE_URL } from '~/config';
@@ -39,7 +40,7 @@ const StyledStatusBadge = styled.span`
   padding: 4px 10px;
 
   &.connected {
-    background: rgba(0, 200, 100, 0.1);
+    background: rgba(0, 200, 100, 0.15);
     color: #00c864;
   }
 
@@ -67,17 +68,28 @@ const StyledCodeBox = styled.div`
   padding: ${themeCssVariables.spacing[5]};
 `;
 
+const StyledCodeRow = styled.div`
+  align-items: center;
+  display: flex;
+  gap: ${themeCssVariables.spacing[3]};
+`;
+
 const StyledUserCode = styled.code`
+  background: ${themeCssVariables.background.secondary};
+  border: 1px solid ${themeCssVariables.border.color.medium};
+  border-radius: ${themeCssVariables.border.radius.sm};
   color: ${themeCssVariables.font.color.primary};
   font-family: monospace;
   font-size: 28px;
   font-weight: bold;
   letter-spacing: 4px;
+  padding: ${themeCssVariables.spacing[2]} ${themeCssVariables.spacing[4]};
 `;
 
 const StyledLink = styled.a`
   color: #1e90ff;
   font-size: ${themeCssVariables.font.size.sm};
+  font-weight: ${themeCssVariables.font.weight.medium};
   text-decoration: underline;
 `;
 
@@ -92,8 +104,9 @@ const StyledEmail = styled.span`
 `;
 
 const StyledActions = styled.div`
+  align-items: center;
   display: flex;
-  gap: ${themeCssVariables.spacing[2]};
+  gap: ${themeCssVariables.spacing[3]};
 `;
 
 type ConnectionStatus = {
@@ -111,6 +124,7 @@ type DeviceCodeResponse = {
 };
 
 export const SettingsAiOpenAiOAuth = () => {
+  const { enqueueToast } = useToast();
   const [status, setStatus] = useState<ConnectionStatus>({ connected: false });
   const [deviceCode, setDeviceCode] = useState<DeviceCodeResponse | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -161,7 +175,11 @@ export const SettingsAiOpenAiOAuth = () => {
       );
 
       if (!response.ok) {
-        throw new Error('Failed to get device code');
+        const errorJson = await response.json().catch(() => ({}));
+
+        throw new Error(
+          errorJson.message || `Request failed with status ${response.status}`,
+        );
       }
 
       const data = (await response.json()) as DeviceCodeResponse;
@@ -169,7 +187,12 @@ export const SettingsAiOpenAiOAuth = () => {
       setDeviceCode(data);
       startPolling(data.deviceCode, data.interval);
     } catch (error) {
-      console.error('Failed to initiate OAuth:', error);
+      const message = error instanceof Error ? error.message : String(error);
+
+      enqueueToast({
+        variant: 'error',
+        children: t`Failed to initiate ChatGPT OAuth: ${message}`,
+      });
     } finally {
       setIsLoading(false);
     }
@@ -207,6 +230,10 @@ export const SettingsAiOpenAiOAuth = () => {
 
             setIsPolling(false);
             setDeviceCode(null);
+            enqueueToast({
+              variant: 'success',
+              children: t`ChatGPT Plus connected successfully!`,
+            });
             fetchStatus();
           }
         } catch {
@@ -227,15 +254,33 @@ export const SettingsAiOpenAiOAuth = () => {
         },
       );
       setStatus({ connected: false });
+      enqueueToast({
+        variant: 'info',
+        children: t`ChatGPT disconnected`,
+      });
     } catch (error) {
-      console.error('Failed to disconnect:', error);
+      const message = error instanceof Error ? error.message : String(error);
+
+      enqueueToast({
+        variant: 'error',
+        children: t`Failed to disconnect: ${message}`,
+      });
     }
+  };
+
+  const handleCopyCode = () => {
+    if (!deviceCode?.userCode) return;
+    navigator.clipboard.writeText(deviceCode.userCode);
+    enqueueToast({
+      variant: 'info',
+      children: t`Code copied to clipboard!`,
+    });
   };
 
   return (
     <StyledContainer>
       <StyledHeader>
-        <StyledTitle>OpenAI / ChatGPT OAuth</StyledTitle>
+        <StyledTitle>OpenAI / ChatGPT Plus (OAuth)</StyledTitle>
         <StyledStatusBadge
           className={status.connected ? 'connected' : 'disconnected'}
         >
@@ -244,7 +289,7 @@ export const SettingsAiOpenAiOAuth = () => {
       </StyledHeader>
 
       <StyledDescription>
-        {t`Connect your ChatGPT account to use OpenAI models with your subscription, without requiring an API key.`}
+        {t`Connect your ChatGPT account to use OpenAI models with your Plus subscription, without requiring pay-per-token API keys.`}
       </StyledDescription>
 
       {status.connected && (
@@ -257,8 +302,9 @@ export const SettingsAiOpenAiOAuth = () => {
             variant="outline"
             color="danger"
             onClick={handleDisconnect}
-            title={t`Disconnect`}
-          />
+          >
+            {t`Disconnect`}
+          </Button>
         </StyledActions>
       )}
 
@@ -266,20 +312,22 @@ export const SettingsAiOpenAiOAuth = () => {
         <StyledActions>
           <Button
             size="sm"
-            variant="primary"
+            variant="solid"
+            color="accent"
             onClick={handleConnect}
             disabled={isLoading}
-            title={isLoading ? t`Starting...` : t`Connect ChatGPT`}
-          />
+            loading={isLoading}
+          >
+            {isLoading ? t`Connecting...` : t`Connect with ChatGPT`}
+          </Button>
         </StyledActions>
       )}
 
       {deviceCode && isPolling && (
         <StyledCodeBox>
           <StyledDescription>
-            {t`Open the link below and enter the verification code:`}
+            {t`1. Open the link below and sign in with your ChatGPT Plus account:`}
           </StyledDescription>
-          <StyledUserCode>{deviceCode.userCode}</StyledUserCode>
           <StyledLink
             href={deviceCode.verificationUri}
             target="_blank"
@@ -287,6 +335,20 @@ export const SettingsAiOpenAiOAuth = () => {
           >
             {deviceCode.verificationUri}
           </StyledLink>
+          <StyledDescription>
+            {t`2. Enter this 8-character confirmation code:`}
+          </StyledDescription>
+          <StyledCodeRow>
+            <StyledUserCode>{deviceCode.userCode}</StyledUserCode>
+            <Button
+              size="sm"
+              variant="outline"
+              color="neutral"
+              onClick={handleCopyCode}
+            >
+              {t`Copy Code`}
+            </Button>
+          </StyledCodeRow>
           <StyledSpinner>{t`Waiting for authorization...`}</StyledSpinner>
         </StyledCodeBox>
       )}

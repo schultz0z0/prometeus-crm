@@ -14,7 +14,7 @@ import { Fragment, useContext, useState } from 'react';
 import { SettingsPath } from 'twenty-shared/types';
 import { getSettingsPath } from 'twenty-shared/utils';
 import { Section } from 'twenty-ui/components';
-import { IconBook, IconMessage, IconSparkles, IconTool } from 'twenty-ui/icon';
+import { IconBook, IconKey, IconMessage, IconSparkles, IconTool } from 'twenty-ui/icon';
 import { useToast } from 'twenty-ui/primitives/feedback';
 import { UndecoratedLink } from 'twenty-ui/primitives/navigation';
 import { ThemeContext, themeCssVariables } from 'twenty-ui/theme-constants';
@@ -128,9 +128,22 @@ export const SettingsAiOverviewTab = () => {
       <Section.Root>
         <Section.Header
           title={t`ChatGPT / Codex OAuth`}
-          description={t`Connect your ChatGPT account to use OpenAI models with your subscription`}
+          description={t`Connect your ChatGPT account to use OpenAI models with your Plus subscription`}
         />
         <SettingsAiOpenAiOAuth />
+      </Section.Root>
+
+      <Section.Root>
+        <Section.Header
+          title={t`AI Providers & API Keys`}
+          description={t`Configure traditional pay-per-token API keys (OpenAI, Anthropic, Google) or custom providers`}
+        />
+        <UndecoratedLink to={`${getSettingsPath(SettingsPath.AdminPanel)}#ai`}>
+          <SettingsCard
+            Icon={<IconKey size={theme.icon.size.md} />}
+            title={t`Manage API Keys in Admin Panel`}
+          />
+        </UndecoratedLink>
       </Section.Root>
 
       <Section.Root>

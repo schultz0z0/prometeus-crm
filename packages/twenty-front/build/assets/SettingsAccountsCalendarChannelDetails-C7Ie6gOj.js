@@ -1,0 +1,10 @@
+import{t as m}from"./jsx-runtime-BmDUFisN.js";import{t as c}from"./dist-x6yBUqMs.js";import{t as e}from"./dist-Cg5OofxW.js";import{s as n}from"./components-BYDupVW5-BeXao-8V.js";import{t as u}from"./surfaces-Ba0h60wf-gPF5x1Ly.js";import{t as v}from"./lib-C3IpGLsk.js";import{t as b}from"./useMutation-Ds2Pb-th.js";import{n as o}from"./graphql-NqZHeRxx.js";import{ad as j}from"./index-DXFJtAay.js";import{t as d}from"./SettingsAccountsVisibilityIcon-CkpB4X-E.js";import{t as A}from"./SettingsRadioSettingsCard-BvY7CWCK.js";import{t as y}from"./SettingsOptionCardContentSwitch-2L1c-xBr.js";var t=m(),h=v`
+  mutation UpdateCalendarChannel($input: UpdateCalendarChannelInput!) {
+    updateCalendarChannel(input: $input) {
+      id
+      visibility
+      isContactAutoCreationEnabled
+      contactAutoCreationPolicy
+    }
+  }
+`,l=c("div")({name:"StyledCardMediaContainer",class:"s13a7ob6",propsAsIs:!1}),x=[{title:{id:"wqF3jl"},description:{id:"MHLapp"},value:o.SHARE_EVERYTHING,cardMedia:(0,t.jsx)(l,{children:(0,t.jsx)(d,{subject:"active",body:"active"})})},{title:{id:"6GBt0m"},description:{id:"zii2Qj"},value:o.METADATA,cardMedia:(0,t.jsx)(l,{children:(0,t.jsx)(d,{subject:"active",body:"inactive"})})}],f=({onChange:i,value:s=o.SHARE_EVERYTHING})=>(0,t.jsx)(A,{name:"event-visibility",options:x,value:s,onChange:i}),g=c("div")({name:"StyledDetailsContainer",class:"sxvfjl",propsAsIs:!1}),k=({calendarChannel:i})=>{const[s]=b(h),r=a=>{s({variables:{input:{id:i.id,update:a}}})},p=a=>{r({visibility:a})},C=a=>{r({isContactAutoCreationEnabled:a})};return(0,t.jsxs)(g,{children:[(0,t.jsxs)(n.Root,{children:[(0,t.jsx)(n.Header,{title:e._({id:"poC90w"}),description:e._({id:"bQkkFU"})}),(0,t.jsx)(f,{value:i.visibility,onChange:p})]}),(0,t.jsxs)(n.Root,{children:[(0,t.jsx)(n.Header,{title:e._({id:"Y2y0mC"}),description:e._({id:"YRT7ZW"})}),(0,t.jsx)(u,{rounded:!0,children:(0,t.jsx)(y,{Icon:j,title:e._({id:"2zJkmL"}),description:e._({id:"lgw3U4"}),checked:i.isContactAutoCreationEnabled,onChange:()=>{C(!i.isContactAutoCreationEnabled)}})})]})]})};export{k as t};

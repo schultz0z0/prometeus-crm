@@ -1,0 +1,1 @@
+import{t as e}from"./jsx-runtime-BmDUFisN.js";import{g as r}from"./dist-BZ9wCSoz.js";import{n as t,t as s}from"./SettingsDevelopersWebhookForm-4_TVv7H3.js";var m=e(),p=()=>{const{webhookId:o}=r();return(0,m.jsx)(s,{mode:t.Edit,webhookId:o})};export{p as SettingsDevelopersWebhookDetail};
