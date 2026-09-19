@@ -42,10 +42,6 @@ services:
 
   worker:
     image: prometeus-crm:${TAG:-latest}
-    build:
-      context: ..
-      dockerfile: packages/twenty-docker/twenty/Dockerfile
-      target: twenty
     restart: always
     command: ["yarn", "worker:prod"]
     volumes:
