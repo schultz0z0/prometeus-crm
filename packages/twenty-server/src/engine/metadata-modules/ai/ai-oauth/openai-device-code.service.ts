@@ -339,10 +339,19 @@ export class OpenaiDeviceCodeService implements OnModuleInit {
 
   // Get a valid access token for a workspace, refreshing if needed
   async getAccessToken(workspaceId?: string): Promise<string | undefined> {
-    const token = workspaceId
-      ? (await this.tokenRepository.findOne({ where: { workspaceId } })) ??
-        (await this.tokenRepository.findOne({ order: { updatedAt: 'DESC' } }))
-      : await this.tokenRepository.findOne({ order: { updatedAt: 'DESC' } });
+    let token: OpenaiOauthTokenEntity | null | undefined = null;
+
+    if (workspaceId) {
+      token = await this.tokenRepository.findOne({ where: { workspaceId } });
+    }
+
+    if (!isDefined(token)) {
+      const tokens = await this.tokenRepository.find({
+        order: { updatedAt: 'DESC' },
+        take: 1,
+      });
+      token = tokens[0];
+    }
 
     if (!isDefined(token)) {
       return undefined;
@@ -382,10 +391,19 @@ export class OpenaiDeviceCodeService implements OnModuleInit {
   async getConnectionStatus(
     workspaceId?: string,
   ): Promise<{ connected: boolean; email?: string; expiresAt?: Date }> {
-    const token = workspaceId
-      ? (await this.tokenRepository.findOne({ where: { workspaceId } })) ??
-        (await this.tokenRepository.findOne({ order: { updatedAt: 'DESC' } }))
-      : await this.tokenRepository.findOne({ order: { updatedAt: 'DESC' } });
+    let token: OpenaiOauthTokenEntity | null | undefined = null;
+
+    if (workspaceId) {
+      token = await this.tokenRepository.findOne({ where: { workspaceId } });
+    }
+
+    if (!isDefined(token)) {
+      const tokens = await this.tokenRepository.find({
+        order: { updatedAt: 'DESC' },
+        take: 1,
+      });
+      token = tokens[0];
+    }
 
     if (!isDefined(token)) {
       return { connected: false };
