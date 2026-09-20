@@ -19,6 +19,7 @@ export const DEFAULT_MODELS_BY_TIER: Record<AiModelTier, string[]> = {
     'mistral/mistral-small-latest@none',
   ],
   fast: [
+    'openai/gpt-5.5@low',
     'openai/gpt-5.6-luna@medium',
     'google/gemini-3.8-flash@medium',
     'anthropic/claude-sonnet-5@medium',
@@ -26,6 +27,7 @@ export const DEFAULT_MODELS_BY_TIER: Record<AiModelTier, string[]> = {
     'mistral/mistral-medium-latest',
   ],
   balanced: [
+    'openai/gpt-5.6-terra@medium',
     'openai/gpt-5.6-luna@high',
     'google/gemini-3.8-flash@high',
     'anthropic/claude-sonnet-5@high',

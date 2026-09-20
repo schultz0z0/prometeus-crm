@@ -243,37 +243,91 @@ export class SdkProviderFactoryService {
 
     const provider = createOpenAI({
       apiKey: 'oauth-placeholder',
-      ...(config.baseUrl && { baseURL: config.baseUrl }),
+      baseURL: config.baseUrl || 'https://chatgpt.com/backend-api/codex',
       fetch: async (url: RequestInfo | URL, init?: RequestInit) => {
         // Resolve the workspace token at call time
-        // The workspaceId is injected into the config by the registry
         const workspaceId = (config as { workspaceId?: string }).workspaceId;
+        const accessToken = await deviceCodeService.getAccessToken(workspaceId);
 
-        if (isDefined(workspaceId)) {
-          const accessToken =
-            await deviceCodeService.getAccessToken(workspaceId);
+        if (isDefined(accessToken)) {
+          const headers = new Headers(init?.headers);
 
-          if (isDefined(accessToken)) {
-            const headers = new Headers(init?.headers);
+          headers.set('Authorization', `Bearer ${accessToken}`);
 
-            headers.set('Authorization', `Bearer ${accessToken}`);
-
-            return globalThis.fetch(url, { ...init, headers });
+          // Extract chatgpt_account_id from the JWT token
+          try {
+            const parts = accessToken.split('.');
+            if (parts.length === 3) {
+              const payload = JSON.parse(
+                Buffer.from(parts[1], 'base64url').toString('utf-8'),
+              );
+              const accountId =
+                payload['https://api.openai.com/auth']?.chatgpt_account_id;
+              if (accountId) {
+                headers.set('chatgpt-account-id', accountId);
+              }
+            }
+          } catch (error) {
+            logger.warn(
+              `Failed to extract chatgpt-account-id from OAuth token: ${error instanceof Error ? error.message : String(error)}`,
+            );
           }
 
-          logger.warn(
-            `No OAuth access token found for workspace ${workspaceId}, falling back to default`,
-          );
+          headers.set('User-Agent', 'OpenAI-Codex-CLI/1.0.0');
+
+          let body = init?.body;
+          if (typeof body === 'string') {
+            try {
+              const parsed = JSON.parse(body);
+              parsed.store = false; // Codex API requires store: false
+              body = JSON.stringify(parsed);
+            } catch {
+              // Body is not JSON, keep as is
+            }
+          }
+
+          return globalThis.fetch(url, { ...init, headers, body });
         }
+
+        logger.warn(
+          `No OAuth access token found for workspace ${workspaceId}, falling back to default`,
+        );
 
         return globalThis.fetch(url, init);
       },
     });
 
+    const CODEX_MODELS = new Set([
+      'gpt-5.6-sol',
+      'gpt-5.6-terra',
+      'gpt-5.6-luna',
+      'gpt-5.5',
+      'gpt-6-astra',
+    ]);
+
+    const resolveCodexModelName = (modelId: string): string => {
+      if (CODEX_MODELS.has(modelId)) {
+        return modelId;
+      }
+      const lower = modelId.toLowerCase();
+      if (lower.includes('sol')) return 'gpt-5.6-sol';
+      if (lower.includes('terra')) return 'gpt-5.6-terra';
+      if (lower.includes('luna')) return 'gpt-5.6-luna';
+      if (lower.includes('5.5')) return 'gpt-5.5';
+      if (lower.includes('astra') || lower.includes('6')) return 'gpt-6-astra';
+      return 'gpt-5.6-luna';
+    };
+
     return this.toProviderInstance(
       provider,
       config.npm,
-      (modelId: string) => (provider as CallableFunction)(modelId),
+      (modelId: string) => {
+        const resolvedName = resolveCodexModelName(modelId);
+        if (typeof (provider as any).responses === 'function') {
+          return (provider as any).responses(resolvedName);
+        }
+        return (provider as CallableFunction)(resolvedName);
+      },
     );
   }
 

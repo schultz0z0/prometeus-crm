@@ -14,10 +14,57 @@ import { Dropdown } from '@/ui/layout/dropdown/components/Dropdown';
 import { DropdownContent } from '@/ui/layout/dropdown/components/DropdownContent';
 import { useAtomState } from '@/ui/utilities/state/jotai/hooks/useAtomState';
 
-const SLIDER_DROPDOWN_WIDTH_PX = 240;
+const SLIDER_DROPDOWN_WIDTH_PX = 280;
 
 const StyledSliderContainer = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: ${themeCssVariables.spacing[2]};
   padding: ${themeCssVariables.spacing[3]};
+`;
+
+const StyledModelList = styled.div`
+  border-top: 1px solid ${themeCssVariables.border.color.light};
+  display: flex;
+  flex-direction: column;
+  gap: ${themeCssVariables.spacing[1]};
+  margin-top: ${themeCssVariables.spacing[2]};
+  padding-top: ${themeCssVariables.spacing[2]};
+`;
+
+const StyledModelItem = styled.button<{ isSelected: boolean }>`
+  align-items: center;
+  background: ${({ isSelected }) =>
+    isSelected
+      ? themeCssVariables.background.transparent.secondary
+      : 'transparent'};
+  border: none;
+  border-radius: ${themeCssVariables.border.radius.sm};
+  color: ${({ isSelected }) =>
+    isSelected
+      ? themeCssVariables.font.color.primary
+      : themeCssVariables.font.color.secondary};
+  cursor: pointer;
+  display: flex;
+  font-size: ${themeCssVariables.font.size.sm};
+  font-weight: ${({ isSelected }) =>
+    isSelected
+      ? themeCssVariables.font.weight.semiBold
+      : themeCssVariables.font.weight.regular};
+  justify-content: space-between;
+  padding: ${themeCssVariables.spacing[1]} ${themeCssVariables.spacing[2]};
+  text-align: left;
+  width: 100%;
+
+  &:hover {
+    background: ${themeCssVariables.background.transparent.secondary};
+    color: ${themeCssVariables.font.color.primary};
+  }
+`;
+
+const StyledTierBadge = styled.span`
+  color: ${themeCssVariables.font.color.light};
+  font-size: ${themeCssVariables.font.size.xs};
 `;
 
 type AiModelTierDropdownProps = {
@@ -74,6 +121,23 @@ export const AiModelTierDropdown = ({
               onTierChange={handleTierChange}
               disabled={disabled}
             />
+            <StyledModelList>
+              {tiers.map((tItem) => {
+                const isSelected = tItem.tier === selectedTier;
+
+                return (
+                  <StyledModelItem
+                    key={tItem.tier}
+                    isSelected={isSelected}
+                    onClick={() => handleTierChange(tItem.tier)}
+                    type="button"
+                  >
+                    <span>{tItem.model?.label ?? tItem.label}</span>
+                    <StyledTierBadge>{tItem.label}</StyledTierBadge>
+                  </StyledModelItem>
+                );
+              })}
+            </StyledModelList>
           </StyledSliderContainer>
         </DropdownContent>
       }
