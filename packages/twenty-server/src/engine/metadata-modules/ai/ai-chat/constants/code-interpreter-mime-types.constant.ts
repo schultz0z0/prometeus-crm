@@ -9,6 +9,7 @@ export const CODE_INTERPRETER_MIME_TYPES = new Set([
   'application/zip',
   'application/x-zip-compressed',
   'application/json',
+  'text/markdown',
   'text/plain',
   'text/xml',
   'application/xml',

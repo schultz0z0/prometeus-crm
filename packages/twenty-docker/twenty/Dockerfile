@@ -239,7 +239,7 @@ RUN tar -C / -Jxpf /tmp/s6-overlay-noarch.tar.xz \
 # these system libs; Node bundles its own).
 RUN apk add --no-cache \
     postgresql18 postgresql18-contrib \
-    redis \
+    redis python3 py3-pandas py3-openpyxl \
     'libcrypto3>=3.5.8-r0' \
     'libssl3>=3.5.8-r0' \
     'curl>=8.22.0-r0' 'jq>=1.8.2-r0' su-exec

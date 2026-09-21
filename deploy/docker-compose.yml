@@ -22,6 +22,8 @@ services:
       STORAGE_TYPE: ${STORAGE_TYPE:-local}
       ENCRYPTION_KEY: ${ENCRYPTION_KEY}
       OPENAI_OAUTH_ENABLED: ${OPENAI_OAUTH_ENABLED:-true}
+      CODE_INTERPRETER_TYPE: ${CODE_INTERPRETER_TYPE:-DISABLED}
+      E2B_API_KEY: ${E2B_API_KEY:-}
     depends_on:
       db:
         condition: service_healthy
@@ -56,6 +58,8 @@ services:
       STORAGE_TYPE: ${STORAGE_TYPE:-local}
       ENCRYPTION_KEY: ${ENCRYPTION_KEY}
       OPENAI_OAUTH_ENABLED: ${OPENAI_OAUTH_ENABLED:-true}
+      CODE_INTERPRETER_TYPE: ${CODE_INTERPRETER_TYPE:-DISABLED}
+      E2B_API_KEY: ${E2B_API_KEY:-}
     depends_on:
       db:
         condition: service_healthy

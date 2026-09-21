@@ -35,6 +35,18 @@ describe('replaceUnsupportedFileParts', () => {
     expect(result[0].parts[0]).toMatchObject({ type: 'file' });
   });
 
+  it('keeps Markdown attachments for the code interpreter', () => {
+    const markdownFile = buildFilePart('text/markdown', 'notes.md');
+
+    const result = replaceUnsupportedFileParts(
+      [buildUserMessage([markdownFile])],
+      [],
+      true,
+    );
+
+    expect(result[0].parts[0]).toEqual(markdownFile);
+  });
+
   it('downgrades code-interpreter file parts when the interpreter is disabled', () => {
     const messages = [
       buildUserMessage([buildFilePart('text/csv', 'data.csv')]),
